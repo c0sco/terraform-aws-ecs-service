@@ -4,10 +4,10 @@ resource "aws_alb" "main" {
   name = "${var.environment}-${var.service_name}"
 
   internal        = "${var.lb_internal}"
-  subnets         = ["${var.lb_subnetids}"]
-  security_groups = ["${concat(list(aws_security_group.alb_sg.id), var.lb_security_group_ids)}"]
+  subnets         = var.lb_subnetids
+  security_groups = concat(list(aws_security_group.alb_sg[count.index].id), var.lb_security_group_ids)
 
-  tags {
+  tags = {
     Name        = "${var.environment}-${var.service_name}"
     Environment = "${var.environment}"
     Application = "${var.service_name}"
@@ -17,14 +17,14 @@ resource "aws_alb" "main" {
 resource "aws_alb_listener" "main" {
   count = "${var.enable_lb ? 1 : 0 }"
 
-  load_balancer_arn = "${aws_alb.main.id}"
+  load_balancer_arn = "${aws_alb.main[count.index].id}"
   port              = "${lookup(var.lb_listener, "port")}"
   protocol          = "${lookup(var.lb_listener, "protocol", "HTTP")}"
   certificate_arn   = "${lookup(var.lb_listener, "certificate_arn", "")}"
   ssl_policy        = "${lookup(var.lb_listener, "certificate_arn", "") == "" ? "" : lookup(var.lb_listener, "ssl_policy", "ELBSecurityPolicy-TLS-1-1-2017-01")}"
 
   default_action {
-    target_group_arn = "${aws_alb_target_group.main.id}"
+    target_group_arn = "${aws_alb_target_group.main[count.index].id}"
     type             = "forward"
   }
 }
@@ -39,11 +39,19 @@ resource "aws_alb_target_group" "main" {
   vpc_id      = "${var.vpc_id}"
   target_type = "${lookup(var.lb_target_group, "target_type", "ip")}"
 
-  health_check = "${var.lb_health_check}"
+  health_check {
+    interval = lookup(var.lb_health_check, "interval", 30)
+    path = lookup(var.lb_health_check, "path", "/")
+    timeout = lookup(var.lb_health_check, "timeout", 10)
+    healthy_threshold = lookup(var.lb_health_check, "healthy_threshold", 5)
+    unhealthy_threshold = lookup(var.lb_health_check, "unhealthy_threshold", 3)
+  }
+
+
 
   deregistration_delay = "${lookup(var.lb_target_group, "deregistration_delay", 300)}"
 
-  tags {
+  tags = {
     Name        = "${var.environment}-${var.service_name}"
     Environment = "${var.environment}"
     Application = "${var.service_name}"
@@ -62,7 +70,7 @@ resource "aws_security_group" "alb_sg" {
     protocol    = "tcp"
     from_port   = "${lookup(var.lb_listener, "port", 80)}"
     to_port     = "${lookup(var.lb_listener, "port", 80)}"
-    cidr_blocks = ["${split(",",var.lb_internal ? var.vpc_cidr : join(",",var.public_alb_whitelist))}"]
+    cidr_blocks = split(",",var.lb_internal ? var.vpc_cidr : join(",",var.public_alb_whitelist))
   }
 
   egress {
@@ -73,7 +81,7 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name        = "${var.environment}-${var.service_name}-alb-sg"
     Environment = "${var.environment}"
     Application = "${var.service_name}"
