@@ -18,17 +18,23 @@ resource "aws_ecs_service" "awsvpc_alb" {
   task_definition = "${aws_ecs_task_definition.main.arn}"
   desired_count   = "${var.service_desired_count}"
 
-  load_balancer = {
-    target_group_arn = "${aws_alb_target_group.main.arn}"
+  load_balancer {
+    target_group_arn = "${aws_alb_target_group.main[count.index].arn}"
     container_name   = "${lookup(var.lb_target_group, "container_name", var.service_name)}"
     container_port   = "${lookup(var.lb_target_group, "container_port", 8080)}"
+  }
+
+  health_check_grace_period_seconds = var.health_check_grace_period_seconds
+
+  service_registries {
+    registry_arn = var.service_discovery_arn
   }
 
   launch_type = "${var.service_launch_type}"
 
   network_configuration {
-    security_groups = ["${var.awsvpc_service_security_groups}"]
-    subnets         = ["${var.awsvpc_service_subnetids}"]
+    security_groups = var.awsvpc_service_security_groups
+    subnets         = var.awsvpc_service_subnetids
   }
 
   depends_on = ["aws_alb_listener.main"]
@@ -44,8 +50,8 @@ resource "aws_ecs_service" "bridge_alb" {
   task_definition = "${aws_ecs_task_definition.main.arn}"
   desired_count   = "${var.service_desired_count}"
 
-  load_balancer = {
-    target_group_arn = "${aws_alb_target_group.main.arn}"
+  load_balancer {
+    target_group_arn = "${aws_alb_target_group.main[count.index].arn}"
     container_name   = "${lookup(var.lb_target_group, "container_name", var.service_name)}"
     container_port   = "${lookup(var.lb_target_group, "container_port", 8080)}"
   }
