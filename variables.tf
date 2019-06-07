@@ -90,8 +90,8 @@ variable "service_desired_count" {
 
 variable "lb_health_check" {
   description = "A health check block for the load balancer, see https://docs.aws.amazon.com/elasticloadbalancing/latest/APIReference/API_CreateTargetGroup.html more for details."
-  type        = "list"
-  default     = [{}]
+  type        = "map"
+  default     = {}
 }
 
 variable "awsvpc_task_execution_role_arn" {
@@ -137,4 +137,10 @@ variable "lb_security_group_ids" {
   description = "Custom Load Balancer security group ids"
   type        = "list"
   default     = []
+}
+
+variable "service_discovery_arn" {}
+
+variable "health_check_grace_period_seconds" {
+  default = "20"
 }
