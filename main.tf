@@ -77,6 +77,10 @@ resource "aws_ecs_service" "awsvpc_nolb" {
   }
 
   launch_type = "${var.service_launch_type}"
+
+  service_registries {
+    registry_arn = var.service_discovery_arn
+  }
 }
 
 # Service for bridge networking and no ALB
