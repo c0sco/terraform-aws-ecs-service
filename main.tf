@@ -72,8 +72,8 @@ resource "aws_ecs_service" "awsvpc_nolb" {
   desired_count   = "${var.service_desired_count}"
 
   network_configuration {
-    security_groups = ["${var.awsvpc_service_security_groups}"]
-    subnets         = ["${var.awsvpc_service_subnetids}"]
+    security_groups = var.awsvpc_service_security_groups
+    subnets         = var.awsvpc_service_subnetids
   }
 
   launch_type = "${var.service_launch_type}"
