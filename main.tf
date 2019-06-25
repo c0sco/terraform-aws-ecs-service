@@ -38,6 +38,11 @@ resource "aws_ecs_service" "awsvpc_alb" {
   }
 
   depends_on = ["aws_alb_listener.main"]
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes = ["task_definition"]
+  }
 }
 
 # Service for bridge networking and ALB
@@ -59,6 +64,11 @@ resource "aws_ecs_service" "bridge_alb" {
   launch_type = "${var.service_launch_type}"
 
   iam_role = "${var.ecs_service_role}"
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes = ["task_definition"]
+  }
 }
 
 # Service for awsvpc networking and no ALB
@@ -81,6 +91,11 @@ resource "aws_ecs_service" "awsvpc_nolb" {
   service_registries {
     registry_arn = var.service_discovery_arn
   }
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes = ["task_definition"]
+  }
 }
 
 # Service for bridge networking and no ALB
@@ -94,4 +109,9 @@ resource "aws_ecs_service" "bridge_noalb" {
   desired_count   = "${var.service_desired_count}"
 
   launch_type = "${var.service_launch_type}"
+
+  lifecycle {
+    create_before_destroy = true
+    ignore_changes = ["task_definition"]
+  }
 }
